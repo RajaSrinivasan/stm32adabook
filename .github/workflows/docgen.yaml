@@ -53,7 +53,10 @@ jobs:
       - name: Render documentation
         working-directory: source
         run: |
-          cd Prj/99_doc/src 
+          cd Prj
+          mkdir 99_doc/.codemd
+          python3 pushdoc.py -D ./99_doc
+          cd 99_doc/src 
           quarto render
 
       # Configure GitHub Pages
