@@ -1,0 +1,81 @@
+name: Build and Publish the Book
+
+on:
+  workflow_dispatch:
+
+  # Optional: run automatically every hour
+  schedule:
+    - cron: '0 * * * *'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Install Quarto
+      - name: Setup Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+
+      # Clone GitLab repository
+      - name: Checkout GitLab repository
+        env:
+          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+        run: |
+          cat > "$RUNNER_TEMP/askpass.sh" <<'EOF'
+          #!/bin/sh
+          case "$1" in
+            *Username*) echo "oauth2" ;;
+            *Password*) echo "$GITLAB_TOKEN" ;;
+          esac
+          EOF
+
+          chmod 700 "$RUNNER_TEMP/askpass.sh"
+
+          export GIT_ASKPASS="$RUNNER_TEMP/askpass.sh"
+          export GIT_TERMINAL_PROMPT=0
+
+          git clone \
+            --depth 1 \
+            --branch main \
+            https://gitlab.com/ada23/embedded/stm32f4disco/projects.git \
+            source
+
+      # Render Quarto documentation
+      - name: Render documentation
+        working-directory: source
+        run: |
+          cd Prj/99_doc/src 
+          quarto render
+
+      # Configure GitHub Pages
+      - name: Setup GitHub Pages
+        uses: actions/configure-pages@v5
+
+      # Upload rendered website
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: source/_site
+
+  # Deploy to GitHub Pages
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
