@@ -1,6 +1,11 @@
 name: Build and Publish the Book
 
 on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
   workflow_dispatch:
 
   # Optional: run automatically every hour
@@ -24,6 +29,10 @@ jobs:
       # Install Quarto
       - name: Setup Quarto
         uses: quarto-dev/quarto-actions/setup@v2
+
+      - name: Install tinytex
+        run:
+          quarto install tinytex
 
       # Clone GitLab repository
       - name: Checkout GitLab repository
