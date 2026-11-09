@@ -76,7 +76,7 @@ jobs:
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v4
         with:
-          path: source/_site
+          path: source/Prj/99_doc/src/public
 
   # Deploy to GitHub Pages
   deploy:
